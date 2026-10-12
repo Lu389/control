@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Control de depósito por sector</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf-autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-boxes"><span></span><span></span><span></span></div>
+  <div class="splash-text">Cargando depósito...</div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand-row">
+      <img id="brand-logo" alt="Logo">
+      <h1>Control de depósito</h1>
+    </div>
+    <div class="header-actions">
+      <button class="share-btn" id="btn-share">⇄ PASAR A OTRO DISPOSITIVO</button>
+      <button class="logo-btn" id="btn-logo">LOGO</button>
+      <div class="tag" id="synctag">local</div>
+    </div>
+  </header>
+
+  <div class="sector-tabs" id="sector-tabs"></div>
+
+  <div class="expiry-alert" id="expiry-alert">
+    <span class="ico">⚠️</span>
+    <span id="expiry-alert-text"></span>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat">
+      <div class="n mono" id="stat-skus">0</div>
+      <div class="l">productos distintos</div>
+    </div>
+    <div class="stat">
+      <div class="n mono" id="stat-units">0</div>
+      <div class="l">unidades totales</div>
+    </div>
+  </div>
+
+  <div class="scan-panel">
+    <button class="scan-btn" id="btn-scan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M3 7V4a1 1 0 0 1 1-1h3"/><path d="M17 3h3a1 1 0 0 1 1 1v3"/>
+        <path d="M21 17v3a1 1 0 0 1-1 1h-3"/><path d="M7 21H4a1 1 0 0 1-1-1v-3"/>
+        <line x1="7" y1="7" x2="7" y2="17"/><line x1="10.5" y1="7" x2="10.5" y2="17"/>
+        <line x1="14" y1="7" x2="14" y2="17"/><line x1="17.5" y1="7" x2="17.5" y2="17"/>
+      </svg>
+      Escanear código de barras
+    </button>
+
+    <div id="reader-wrap">
+      <div id="reader"></div>
+      <div class="scan-hint" id="scan-hint">Apuntá la cámara al código de barras</div>
+      <button class="cancel-scan" id="btn-cancel-scan">Cancelar</button>
+    </div>
+
+    <div class="manual-row">
+      <input type="text" id="manual-code" inputmode="numeric" placeholder="o escribí el código manualmente">
+      <button id="btn-manual">Buscar</button>
+    </div>
+  </div>
+
+  <div class="export-row">
+    <button class="export-btn" id="btn-print">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 6 2 18 2 18 9"/>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+        <rect x="6" y="14" width="12" height="8"/>
+      </svg>
+      Imprimir
+    </button>
+    <button class="export-btn" id="btn-pdf">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
+      </svg>
+      Descargar PDF
+    </button>
+  </div>
+
+  <div class="search-row">
+    <input type="text" id="search" placeholder="Buscar en la lista por nombre o código...">
+  </div>
+
+  <div class="expiry-filters">
+    <button class="expiry-chip active" data-filter="todos">Todos</button>
+    <button class="expiry-chip" data-filter="vencidos">⚠ Vencidos <span class="n"></span></button>
+    <button class="expiry-chip" data-filter="proximos">⏰ Por vencer <span class="n"></span></button>
+    <label class="days-setting">alertar ≤<input type="number" id="alert-days" min="1" value="30">días</label>
+  </div>
+
+  <div class="list-title">
+    <span>Productos registrados</span>
+  </div>
+  <div class="product-list" id="product-list"></div>
+  <div class="empty" id="empty-msg" style="display:none;">Todavía no escaneaste ningún producto.</div>
+
+  <div class="status-line" id="status-line"></div>
+</div>
+
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <h2 id="modal-title">Producto nuevo</h2>
+    <div class="code mono" id="modal-code"></div>
+    <label for="modal-name">Nombre del producto</label>
+    <input type="text" id="modal-name" placeholder="Ej: Cofler leche 55g x10">
+    <label for="modal-sector">Sector</label>
+    <select id="modal-sector">
+      <optgroup label="Alimentos">
+        <option value="alimentos1">Alimentos 1</option>
+        <option value="alimentos2">Alimentos 2</option>
+      </optgroup>
+      <optgroup label="Bebidas">
+        <option value="bebidas1">Bebidas 1</option>
+        <option value="bebidas2">Bebidas 2</option>
+      </optgroup>
+      <optgroup label="Limpieza">
+        <option value="limpieza1">Limpieza 1</option>
+        <option value="limpieza2">Limpieza 2</option>
+      </optgroup>
+    </select>
+    <label for="modal-qty" id="modal-qty-label">Cantidad</label>
+    <input type="number" id="modal-qty" min="0" value="1" inputmode="numeric">
+    <label for="modal-expiry">Fecha de vencimiento (opcional)</label>
+    <input type="date" id="modal-expiry">
+
+    <div id="modal-location">
+      <div class="modal-row-2">
+        <div>
+          <label for="modal-locsector">Sector (número)</label>
+          <input type="text" id="modal-locsector" inputmode="numeric" placeholder="Ej: 1">
+        </div>
+        <div>
+          <label for="modal-localtura">Altura</label>
+          <select id="modal-localtura">
+            <option value="">Sin especificar</option>
+            <option value="alto">Alto</option>
+            <option value="medio">Medio</option>
+            <option value="bajo">Bajo</option>
+          </select>
+        </div>
+      </div>
+      <div class="hint">Ubicación dentro del sector de alimentos o limpieza.</div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost" id="modal-cancel">Cancelar</button>
+      <button class="btn-primary" id="modal-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="logo-modal-backdrop">
+  <div class="modal">
+    <h2>Logo de la empresa</h2>
+    <div class="code mono">Se usa en el encabezado, al imprimir y en el PDF</div>
+    <label for="logo-file">Elegí una imagen (PNG o JPG)</label>
+    <input type="file" id="logo-file" accept="image/png,image/jpeg">
+    <img class="logo-modal-preview" id="logo-preview" alt="Vista previa del logo">
+    <div class="modal-actions">
+      <button class="btn-ghost" id="logo-remove">Quitar logo</button>
+      <button class="btn-primary" id="logo-cancel">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop share-modal" id="share-modal-backdrop">
+  <div class="modal">
+    <h2>Pasar información a otro dispositivo</h2>
+    <div class="code mono">Todo el control de depósito, de un aparato a otro, sin internet</div>
+
+    <div class="share-tabs">
+      <button class="share-tab active" id="tab-send" data-pane="send">Este dispositivo TIENE la info</button>
+      <button class="share-tab" id="tab-recv" data-pane="recv">Este dispositivo RECIBE la info</button>
+    </div>
+
+    <div class="share-pane active" id="pane-send">
+      <div class="qr-stage">
+        <div class="qr-canvas-wrap"><canvas id="qr-canvas"></canvas></div>
+        <div class="qr-progress" id="qr-progress">Generá el código para empezar</div>
+        <div class="qr-controls" id="qr-controls" style="display:none;">
+          <button id="qr-prev">‹ anterior</button>
+          <button id="qr-playpause">Pausar</button>
+          <button id="qr-next">siguiente ›</button>
+        </div>
+        <div class="qr-hint">En el otro dispositivo abrí esta misma app, tocá "⇄ PASAR A OTRO DISPOSITIVO" → "Este dispositivo RECIBE la info" y apuntá la cámara a la pantalla hasta que se muestren todos los códigos.</div>
+      </div>
+    </div>
+
+    <div class="share-pane" id="pane-recv">
+      <div id="recv-reader"></div>
+      <div class="recv-progress-bar"><div id="recv-progress-fill"></div></div>
+      <div class="recv-status" id="recv-status">Tocá "Empezar a recibir" y apuntá al otro dispositivo</div>
+      <div class="qr-controls" style="justify-content:center; margin-top:10px;">
+        <button id="recv-start">Empezar a recibir</button>
+        <button id="recv-stop" style="display:none;">Detener</button>
+      </div>
+      <div class="recv-summary" id="recv-summary" style="display:none;"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost" id="share-close">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div id="print-report"></div>
+
+<script src="./java/script.js"></script>
+</body>
+</html>
